@@ -1,0 +1,100 @@
+## Project Context
+
+### Project Name
+Roofiant — a Laravel REST API backend
+
+### Tech Stack
+- Laravel 12 (modular structure)
+- PHP 8.3
+- PostgreSQL (via pgsql driver)
+- Laravel Sanctum (API token auth)
+- No frontend — pure JSON API
+
+### Project Structure
+app/
+├── Exceptions/Handler.php
+├── Helpers/ApiResponse.php
+├── Http/
+│   ├── Controllers/Controller.php
+│   └── Requests/BaseRequest.php
+├── Models/
+│   ├── User.php
+│   ├── City.php
+│   ├── Service.php
+│   ├── Project.php
+│   ├── ProjectMedia.php
+│   ├── Blog.php
+│   ├── Review.php
+│   ├── TeamMember.php
+│   ├── Lead.php
+│   ├── Material.php
+│   └── SiteSetting.php
+├── Modules/
+│   ├── Auth/
+│   │   ├── Controllers/AuthController.php
+│   │   ├── DTOs/LoginDTO.php, RegisterDTO.php, ChangePasswordDTO.php
+│   │   ├── Requests/LoginRequest.php, RegisterRequest.php, ChangePasswordRequest.php
+│   │   ├── Routes/api.php
+│   │   └── Services/AuthService.php
+│   └── User/
+│       ├── Controllers/UserController.php
+│       ├── DTOs/CreateUserDTO.php, UpdateUserDTO.php
+│       ├── Requests/CreateUserRequest.php, UpdateUserRequest.php
+│       ├── Routes/api.php
+│       └── Services/UserService.php
+└── Providers/AppServiceProvider.php
+
+### Module Structure Pattern
+Every module follows this exact pattern:
+- Controller  → handles HTTP, calls Service, returns ApiResponse
+- Service     → all business logic
+- DTO         → typed data carrier (fromArray() static method)
+- Request     → validation rules (extends BaseRequest)
+- Routes      → api.php loaded in main routes/api.php
+
+### Database Schema (PostgreSQL)
+Tables:
+- users          → id, name, email, password, role(admin/editor), timestamps
+- cities         → id, name, slug, state, zip_code, description, meta_title, meta_desc, status, timestamps
+- services       → id, parent_id(self FK), name, slug, description, icon, meta_title, meta_desc, sort_order, status, timestamps
+- city_service   → id, city_id(FK), service_id(FK) [pivot]
+- projects       → id, city_id(FK), service_id(FK), title, slug, description, location_address, is_featured, status, meta_title, meta_desc, timestamps
+- project_media  → id, project_id(FK), type(before/after/video), file_path, file_type, sort_order, created_at
+- blogs          → id, user_id(FK), title, slug, content, excerpt, thumbnail, status, published_at, meta_title, meta_desc, timestamps
+- reviews        → id, project_id(FK nullable), customer_name, rating, review_text, source(google/manual), status, created_at
+- team_members   → id, name, role, bio, photo, department, sort_order, status, timestamps
+- leads          → id, name, email, phone, message, service_id(FK nullable), source_page, status(new/read/done), created_at
+- materials      → id, name, slug, description, image, sort_order, status, timestamps
+- site_settings  → id, key, value, group, timestamps
+
+### Auth
+- Laravel Sanctum token-based auth
+- Admin only access
+- role field: 'admin' | 'editor'
+- Register requires ADMIN_SECRET_KEY from .env
+
+### API Routes (current)
+All routes prefixed with /api
+Auth module (app/Modules/Auth/Routes/api.php):
+  POST   /api/auth/admin/register   → public (requires secret_key)
+  POST   /api/auth/admin/login      → public
+  POST   /api/auth/admin/logout     → sanctum protected
+  GET    /api/auth/admin/profile    → sanctum protected
+  PUT    /api/auth/admin/password   → sanctum protected
+
+### Coding Conventions
+- Method names: camelCase (e.g. changePassword not ChangePassword)
+- Always use DTOs to pass data into services
+- Always return ApiResponse::success() or ApiResponse::error() from controllers
+- Requests extend BaseRequest
+- All new features follow the same module pattern (Controller/DTO/Request/Routes/Service)
+- No business logic in controllers
+- No direct Request access in services (use DTOs)
+
+### Environment
+- OS: Windows 11
+- Shell: PowerShell (not bash — use PowerShell syntax)
+- DB: PostgreSQL 17, local, port 5432, database name: roofiant
+- PHP: 8.3.30
+- Laravel: 13.5.0
+- Server: php artisan serve (localhost:8000)
